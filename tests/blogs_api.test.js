@@ -63,6 +63,7 @@ describe('blogs api test ', () => {
             name: 'suyog',
         }
         beforeEach(async () => {
+            await User.deleteMany({})
             await api.post('/api/users').send(user)
             const response = await api.post('/api/login').send(user)
             token = response.body.token
@@ -203,28 +204,64 @@ describe('blogs api test ', () => {
     })
     describe('Updating Document', () => {
         let blogToUpdate
-        let updatedDocument = { ...initialBlogs[0], title: 'Updated Title' }
+        let user
+        let token
+        let updatedDocument
+        test(
+            'updating a document gives status of 200 and returns updated document',
+            { only: true },
+            async (t) => {
+                beforeEach(async () => {
+                    await User.deleteMany({})
+                    await Blog.deleteMany({})
+                    user = {
+                        name: 'suyog',
+                        password: 'suyog',
+                        username: 'suyog',
+                    }
+                    blogToUpdate = {
+                        title: 'The great Calamity of Test',
+                        author: 'not capable',
+                        likes: 42069,
+                        url: 'www.example.com',
+                    }
+                    await api.post('/api/users').send(user)
+                    let response = await api.post('/api/login').send(user)
+                    user = response.body
+                    token = user.token
+                    blogToUpdate = (
+                        await api
+                            .post('/api/blogs')
+                            .send(blogToUpdate)
+                            .set({ authorization: `Bearer ${token}` })
+                    ).body
+                    updatedDocument = {
+                        ...blogToUpdate,
+                        title: 'The great Calamity of updating the Test',
+                        author: 'clearly definitely capable',
+                    }
+                    // delete updatedDocument.id
+                })
+                await t.test('gives status code 200', async () => {
+                    await api
+                        .put(`/api/blogs/${blogToUpdate.id}`)
+                        .send(updatedDocument)
+                        .set({ authorization: `Bearer ${token}` })
+                        .expect(200)
+                })
 
-        test('updating a document gives status of 200 and returns updated document', async (t) => {
-            beforeEach(async () => {
-                const response = await api.get('/api/blogs')
-                blogToUpdate = response.body.find((blog) => blog.title === initialBlogs[0].title)
-                // updatedDocument.id = blogToUpdate.id
-            })
-
-            await t.test('gives status code 200', async () => {
-                await api.put(`/api/blogs/${blogToUpdate.id}`).send(updatedDocument).expect(200)
-            })
-
-            await t.test('returns updated document', async () => {
-                updatedDocument.id = blogToUpdate.id
-                const response = await api
-                    .put(`/api/blogs/${blogToUpdate.id}`)
-                    .send(updatedDocument)
-                const returnedDocument = response.body
-                assert.deepStrictEqual(returnedDocument, updatedDocument)
-            })
-        })
+                await t.test('returns updated document', async () => {
+                    updatedDocument.id = blogToUpdate.id
+                    const response = await api
+                        .put(`/api/blogs/${blogToUpdate.id}`)
+                        .send(updatedDocument)
+                        .set({ authorization: `Bearer ${token}` })
+                        .expect(200)
+                    const returnedDocument = response.body
+                    assert.deepStrictEqual(returnedDocument, updatedDocument)
+                })
+            }
+        )
     })
 })
 after(async () => {

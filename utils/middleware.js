@@ -1,20 +1,23 @@
+const User = require('../models/user.model')
+const { SECRET_KEY } = require('./config')
 const logger = require('./logger')
+const jwt = require('jsonwebtoken')
 const errorHandler = (err, req, res, next) => {
-    // logger.info(err.name)
-    // logger.info(err.message)
-    // //! Remove this once finished Debugging
-    // console.log('########################')
-    // console.log('|')
-    // console.log('|')
-    // console.log('|')
-    // console.log(err.name)
-    // console.log(err.message)
-    // console.log(err)
-    // console.log('|')
-    // console.log('|')
-    // console.log('|')
-    // console.log('########################')
-    // //!Remove this once finished Debugging
+    logger.info(err.name)
+    logger.info(err.message)
+    //! Remove this once finished Debugging
+    console.log('########################')
+    console.log('|')
+    console.log('|')
+    console.log('|')
+    console.log(err.name)
+    console.log(err.message)
+    console.log(err)
+    console.log('|')
+    console.log('|')
+    console.log('|')
+    console.log('########################')
+    //!Remove this once finished Debugging
     if (err.name === 'ValidationError') {
         res.status(400).json({ error: err.message })
     }
@@ -40,14 +43,28 @@ const methodLogger = (req, res, next) => {
     next()
 }
 
-const getToken = (req, res, next) => {
+const userExtractor = async (req, res, next) => {
     const authorization = req.get('authorization')
-    if (authorization && authorization.startsWith('Bearer ')) {
-        req.token = authorization.replace('Bearer ', '')
-    } else {
-        req.token = null
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+        next()
+        return
     }
+    req.token = authorization.replace('Bearer ', '')
+    const userDetails = jwt.verify(req.token, SECRET_KEY)
+    if (!userDetails.id) {
+        next()
+        return
+    }
+    const user = await User.findById(userDetails.id)
+    //! Remove this once finished Debugging
+    console.log('########################')
+    console.log('|')
+    console.log(userDetails)
+    console.log('|')
+    console.log('########################')
+    //!Remove this once finished Debugging
+    req.user = user
     next()
 }
 
-module.exports = { errorHandler, unknownEndPoint, methodLogger, getToken }
+module.exports = { errorHandler, unknownEndPoint, methodLogger, userExtractor }

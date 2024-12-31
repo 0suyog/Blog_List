@@ -38,13 +38,9 @@ describe('Creating Users', () => {
         const userInDb = await User.find({ name: newUser.name })
         assert.strictEqual(userInDb.length, 1)
     })
-    test(
-        'creating a new User when a user already exists should return 409',
-        { only: true },
-        async () => {
-            await api.post('/api/users').send(users[0]).expect(409)
-        }
-    )
+    test('creating a new User when a user already exists should return 409', async () => {
+        await api.post('/api/users').send(users[0]).expect(409)
+    })
     test('creating a new user with missing values', async (t) => {
         await t.test('no password', async () => {
             const newUser = {

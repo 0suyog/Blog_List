@@ -1,6 +1,5 @@
 const Blog = require('../models/blog.model')
-const User = require('../models/user.model')
-const jwt = require('jsonwebtoken')
+const { userExtractor } = require('../utils/middleware')
 const blogRouter = require('express').Router()
 // const logger = require('../utils/logger')
 
@@ -17,16 +16,17 @@ blogRouter.get('/authors', async (req, res) => {
     res.json(returnValue)
 })
 
-blogRouter.post('/', async (request, response) => {
+blogRouter.post('/', userExtractor, async (request, response) => {
+    // res
     // logger.info(request)
-    const token = request.token
-    if (token === null) {
-        response.status(401).json({ error: 'Unauthorized request' })
-        return
-    }
-    const userDetails = jwt.decode(token)
+    // const token = request.token
+    // if (token === null) {
+    //     response.status(401).json({ error: 'Unauthorized request' })
+    //     return
+    // }
+    // const userDetails = jwt.decode(token)
     const blog = new Blog(request.body)
-    let user = await User.findById(userDetails.id)
+    let user = request.user
     if (!user) {
         response.status(401).json({ error: 'Unauthorized request' })
         return
@@ -37,25 +37,17 @@ blogRouter.post('/', async (request, response) => {
     await user.save()
     response.status(201).json(result)
 })
-blogRouter.delete('/:id', async (req, res) => {
-    const token = req.token
-    if (!token) {
+blogRouter.delete('/:id', userExtractor, async (req, res) => {
+    const user = req.user
+    if (!user) {
         res.status(401).json({
             error: 'You arent authorized to perform operation',
         })
         return
     }
-    const userDetails = jwt.decode(token)
     let id = req.params.id
     const blog = await Blog.findById(id)
-    //! Remove this once finished Debugging
-    console.log('########################')
-    console.log('|')
-    console.log(blog.user)
-    console.log('|')
-    console.log('########################')
-    //!Remove this once finished Debugging
-    if (blog.user.toString() !== userDetails.id.toString()) {
+    if (blog.user.toString() !== user.id.toString()) {
         res.status(401).json({
             error: 'You arent authorized to perform operation',
         })
@@ -65,9 +57,23 @@ blogRouter.delete('/:id', async (req, res) => {
     res.status(204).end()
 })
 
-blogRouter.put('/:id', async (req, res) => {
+blogRouter.put('/:id', userExtractor, async (req, res) => {
     const id = req.params.id
     const updatedDocument = req.body
+    const user = req.user
+    if (!user) {
+        res.status(401).json({
+            error: 'You arent authorized to perform operation',
+        })
+        return
+    }
+    const blog = await Blog.findById(id)
+    if (blog.user.toString() !== user.id.toString()) {
+        res.status(401).json({
+            error: 'You arent authorized to perform operation',
+        })
+        return
+    }
     const updatedBlog = await Blog.findByIdAndUpdate(id, updatedDocument, {
         runValidators: true,
         new: true,
