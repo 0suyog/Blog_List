@@ -32,8 +32,8 @@ const unknownEndPoint = (req, res) => {
 const methodLogger = (req, res, next) => {
     logger.info(`Method: ${req.method}`)
     logger.info(`Path: ${req.path}`)
-    logger.info(`Body: ${JSON.stringify(req.body)}`)
-    logger.info(`Headers: ${JSON.stringify(req.headers)}`)
+    logger.info(`Body: ${JSON.stringify(req.body, null, 3)}`)
+    logger.info(`Headers: ${JSON.stringify(req.headers, null, 3)}`)
     logger.info(`Params: ${JSON.stringify(req.params)}`)
     logger.info(`Queries: ${JSON.stringify(req.query)}`)
     logger.info('X-------X-------X')

@@ -47,7 +47,7 @@ blogRouter.delete('/:id', async (req, res) => {
     }
     const userDetails = jwt.decode(token)
     let id = req.params.id
-    const blog =await Blog.findById(id)
+    const blog = await Blog.findById(id)
     //! Remove this once finished Debugging
     console.log('########################')
     console.log('|')
